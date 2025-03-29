@@ -177,6 +177,10 @@ namespace PCBViewer
         {
             try
             {
+                if (pngImage != null)
+                {
+                    DrawingCanvas.Children.Remove(pngImage);
+                }
                 dxfDocument = new DxfDocument();
 
                 // check version before loading
