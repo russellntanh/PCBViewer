@@ -21,6 +21,8 @@
 
             <Button x:Name="DxfDwgButton" Content="Import DXF" Width="100" Margin="5 0 0 0"
                     Click="DxfDwgButton_Click"/>
+
+            <Button x:Name="BasicDrawButton" Content="Basic Draw" Width="100" Margin="5 0 0 0" Click="BasicDrawButton_Click"/>
         </StackPanel>
 
         <!--Canvas for drawing-->

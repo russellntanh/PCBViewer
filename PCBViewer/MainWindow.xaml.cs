@@ -83,11 +83,7 @@ namespace PCBViewer
         {
             try
             {
-                // neu co anh da ve tren canvas
-                if (pngImage != null)
-                {
-                    DrawingCanvas.Children.Remove(pngImage);
-                }
+                ClearDrawing();
 
                 // tao doi tuong Bitmap tu file PNG
                 BitmapImage bitmapImage = new BitmapImage();
@@ -202,6 +198,8 @@ namespace PCBViewer
 
         private void DrawBasicShapes()
         {
+            ClearDrawing();
+
             // Vẽ hình chữ nhật
             Rectangle rectangle = new Rectangle();
             rectangle.Width = 100;
@@ -209,7 +207,7 @@ namespace PCBViewer
             rectangle.Fill = Brushes.LightBlue;
             rectangle.Stroke = Brushes.Black;
             rectangle.StrokeThickness = 2;
-            Canvas.SetLeft(rectangle, 50);
+            Canvas.SetLeft(rectangle, 250);
             Canvas.SetTop(rectangle, 50);
             DrawingCanvas.Children.Add(rectangle);
 
@@ -221,14 +219,14 @@ namespace PCBViewer
             ellipse.Stroke = Brushes.Red;
             ellipse.StrokeThickness = 1;
             Canvas.SetLeft(ellipse, 150);
-            Canvas.SetTop(ellipse, 100);
+            Canvas.SetTop(ellipse, 150);
             DrawingCanvas.Children.Add(ellipse);
 
             // Vẽ đường thẳng
             Line line = new Line();
-            line.X1 = 20;
+            line.X1 = 200;
             line.Y1 = 20;
-            line.X2 = 200;
+            line.X2 = 150;
             line.Y2 = 150;
             line.Stroke = Brushes.DarkGray;
             line.StrokeThickness = 3;
@@ -241,18 +239,16 @@ namespace PCBViewer
             polygon.Stroke = Brushes.Black;
             DrawingCanvas.Children.Add(polygon);
 
-            // Vẽ đường Path phức tạp.
-            Path path = new Path();
-            path.Data = Geometry.Parse("M 10,10 L 100,50 A 40,40 0 1 1 50,120 Z");
-            path.Fill = Brushes.Orange;
-            path.Stroke = Brushes.Black;
-            DrawingCanvas.Children.Add(path);
+            //// Vẽ đường Path phức tạp.
+            //Path path = new Path();
+            //path.Data = Geometry.Parse("M 300,300 L 100,50 A 40,40 0 1 1 490,320 Z");
+            //path.Fill = Brushes.Orange;
+            //path.Stroke = Brushes.Black;
+            //DrawingCanvas.Children.Add(path);
         }
 
         private void DrawGraphics()
         {
-            DrawBasicShapes();
-
             foreach (var element in DrawingCanvas.Children)
             {
                 if (element != pngImage)
@@ -451,5 +447,20 @@ namespace PCBViewer
             }
         }
 
+        private void BasicDrawButton_Click(object sender, RoutedEventArgs e)
+        {
+            DrawBasicShapes();
+        }
+
+        private void ClearDrawing()
+        {
+            // neu co anh da ve tren canvas
+            if (DrawingCanvas.Children.Count > 0)
+            {
+                DrawingCanvas.Children.Clear();
+            }
+        }
     }
+
+    
 }
