@@ -155,9 +155,10 @@ namespace PCBViewer
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
             {
-                Filter = "PNG files (*.png)|*.png|" +
+                Filter = 
+                         "PNG files (*.png)|*.png|" +
                          "DXF files (*.dxf)|*.dxf|" +
-                         "DWG files (*.dwg)|*.dwg|" +
+                         "DWG files (*.dwg)|*.dwg|" + 
                          "All files (*.*)|*.*"
             };
 
@@ -173,10 +174,8 @@ namespace PCBViewer
         {
             try
             {
-                if (pngImage != null)
-                {
-                    DrawingCanvas.Children.Remove(pngImage);
-                }
+                ClearDrawing();
+
                 dxfDocument = new DxfDocument();
 
                 // check version before loading
@@ -189,10 +188,18 @@ namespace PCBViewer
 
                 // load file
                 dxfDocument = DxfDocument.Load(filePath);
+                if (dxfDocument == null)
+                {
+                    MessageBox.Show("dxfDocument is null after Load!");
+                }
+                else
+                {
+                    MessageBox.Show("File loaded successfully!");
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading DXF: {ex.Message}");
+                MessageBox.Show($"Error loading DXF: {ex.Message}.\nStack Trace: {ex.StackTrace}");
             }
         }
 

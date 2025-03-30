@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:PCBViewer"
         mc:Ignorable="d"
         ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
         Title="PCB Viewer" Height="640" Width="800">
     <Grid>
         <Grid.RowDefinitions>
