@@ -153,53 +153,7 @@ namespace PCBViewer
             }
         }
 
-        private void DxfDwgButton_Click(object sender, RoutedEventArgs e)
-        {
-            OpenFileDialog openFileDialog = new OpenFileDialog
-            {
-                Filter = "DXF files (*.dxf)|*.dxf|" +
-                         "All files (*.*)|*.*"
-            };
 
-            if (openFileDialog.ShowDialog() == true)
-            {
-                string filePath = openFileDialog.FileName;
-                if (pngImage != null)
-                    pngImage = null;
-                LoadDxfFile(filePath);
-            }
-        }
-
-        private void LoadDxfFile(string filePath)
-        {
-            try
-            {
-                dxfDocument = new DxfDocument();
-
-                // check version before loading
-                DxfVersion dxfVersion = DxfDocument.CheckDxfFileVersion(filePath);
-                if (dxfVersion < DxfVersion.AutoCad2000)
-                {
-                    MessageBox.Show("The selected file version: " + dxfVersion + " is not compatible with netDxf library which only from AutoCad13");
-                    return;
-                }
-
-                // load file
-                dxfDocument = DxfDocument.Load(filePath);
-                if (dxfDocument == null)
-                {
-                    MessageBox.Show("dxfDocument is null after Load!");
-                }
-                else
-                {
-                    DrawDxfGraphics();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error loading DXF: {ex.Message}.\nStack Trace: {ex.StackTrace}");
-            }
-        }
 
         private void DrawBasicShapes()
         {
@@ -256,11 +210,7 @@ namespace PCBViewer
         // Draw loaded dxf file
         private void DrawDxfGraphics()
         {
-            ClearDrawing();
-            currentContent = ContentType.DxfFile;
-
-            if (dxfDocument == null) return;
-
+            DrawingCanvas.Children.Clear();
             // draw line
             foreach (netDxf.Entities.Line line in dxfDocument.Entities.Lines)
             {
@@ -436,11 +386,12 @@ namespace PCBViewer
             }
         }
 
-        private bool IsMouseNearLine(Point mousePosition, System.Windows.Shapes.Line line)
+        private bool IsMouseNearLine(Point mousePos, System.Windows.Shapes.Line line)
         {
+            // Basic proximity check (expand for precision)
             double tolerance = 5 / zoomLevel;
-            return mousePosition.X >= line.X1 - tolerance && mousePosition.X <= line.X2 + tolerance &&
-                   mousePosition.Y >= line.Y1 - tolerance && mousePosition.Y <= line.Y2 + tolerance;
+            return mousePos.X >= line.X1 - tolerance && mousePos.X <= line.X2 + tolerance &&
+                   mousePos.Y >= line.Y1 - tolerance && mousePos.Y <= line.Y2 + tolerance;
         }
 
         private void DrawingCanvas_MouseDown(object sender, MouseButtonEventArgs e)
@@ -465,6 +416,57 @@ namespace PCBViewer
         private void BasicDrawButton_Click(object sender, RoutedEventArgs e)
         {
             DrawBasicShapes();
+        }
+
+        private void DxfDwgButton_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Filter = "DXF files (*.dxf)|*.dxf|" +
+                         "All files (*.*)|*.*"
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                string filePath = openFileDialog.FileName;
+                if (pngImage != null)
+                    pngImage = null;
+                LoadDxfFile(filePath);
+            }
+        }
+
+        private void LoadDxfFile(string filePath)
+        {
+            try
+            {
+                dxfDocument = new DxfDocument();
+
+                // check version before loading
+                DxfVersion dxfVersion = DxfDocument.CheckDxfFileVersion(filePath);
+                if (dxfVersion < DxfVersion.AutoCad2000)
+                {
+                    MessageBox.Show("The selected file version: " + dxfVersion + " is not compatible with netDxf library which only from AutoCad13");
+                    return;
+                }
+
+                // load dxf file
+                ClearDrawing();
+                currentContent = ContentType.DxfFile;
+
+                dxfDocument = DxfDocument.Load(filePath);
+                if (dxfDocument == null)
+                {
+                    MessageBox.Show("dxfDocument is null after Load!");
+                }
+                else
+                {
+                    DrawDxfGraphics();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading DXF: {ex.Message}.\nStack Trace: {ex.StackTrace}");
+            }
         }
 
         private void ClearDrawing()
