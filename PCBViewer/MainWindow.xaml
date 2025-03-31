@@ -20,10 +20,10 @@
             <Button x:Name="ImageButton" Content="Import Image" Width="100"
                     Click="ImageButton_Click"/>
 
-            <Button x:Name="DxfDwgButton" Content="Import DXF" Width="100" Margin="5 0 0 0"
-                    Click="DxfDwgButton_Click"/>
-
             <Button x:Name="BasicDrawButton" Content="Basic Draw" Width="100" Margin="5 0 0 0" Click="BasicDrawButton_Click"/>
+            
+            <Button x:Name="DxfDwgButton" Content="Import DXF" Width="100" Margin="5 0 0 0"
+        Click="DxfDwgButton_Click"/>
         </StackPanel>
 
         <!--Canvas for drawing-->
@@ -34,7 +34,7 @@
                 MouseDown="DrawingCanvas_MouseDown"
                 MouseUp="DrawingCanvas_MouseUp"
                 ClipToBounds="True"
-                ></Canvas>
+        ></Canvas>
 
         <StackPanel Orientation="Horizontal" Background="LightGray" Grid.Row="2" Height="50">
             <Label Content="Position :" VerticalAlignment="Center"/>

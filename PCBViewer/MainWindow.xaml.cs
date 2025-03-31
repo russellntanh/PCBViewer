@@ -29,6 +29,16 @@ namespace PCBViewer
         private string _greyValue;
         private WriteableBitmap writeableBitmap;
 
+        public enum ContentType
+        {
+            None,
+            PngImage,
+            BasicDraw,
+            DxfFile
+        }
+
+        private ContentType currentContent = ContentType.None;
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         private void OnPropertyChanged(string propertyName)
@@ -79,11 +89,13 @@ namespace PCBViewer
             }
         }
 
+        // Draw loaded image
         private void LoadImage(string filePath)
         {
             try
             {
                 ClearDrawing();
+                currentContent = ContentType.PngImage;
 
                 // tao doi tuong Bitmap tu file PNG
                 BitmapImage bitmapImage = new BitmapImage();
@@ -97,7 +109,6 @@ namespace PCBViewer
                 // tao Image control
                 pngImage = new Image
                 {
-                    //Source = bitmapImage,
                     Source = writeableBitmap,
                     Stretch = Stretch.UniformToFill,
                 };
@@ -142,31 +153,20 @@ namespace PCBViewer
             }
         }
 
-        private void UpdateZoom()
-        {
-            if (pngImage != null)
-            {
-                pngImage.Width = writeableBitmap.PixelWidth * zoomLevel;
-                pngImage.Height = writeableBitmap.PixelHeight * zoomLevel;
-            }
-        }
-
         private void DxfDwgButton_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
             {
-                Filter = 
-                         "PNG files (*.png)|*.png|" +
-                         "DXF files (*.dxf)|*.dxf|" +
-                         "DWG files (*.dwg)|*.dwg|" + 
+                Filter = "DXF files (*.dxf)|*.dxf|" +
                          "All files (*.*)|*.*"
             };
 
             if (openFileDialog.ShowDialog() == true)
             {
                 string filePath = openFileDialog.FileName;
+                if (pngImage != null)
+                    pngImage = null;
                 LoadDxfFile(filePath);
-                DrawGraphics();
             }
         }
 
@@ -174,8 +174,6 @@ namespace PCBViewer
         {
             try
             {
-                ClearDrawing();
-
                 dxfDocument = new DxfDocument();
 
                 // check version before loading
@@ -194,7 +192,7 @@ namespace PCBViewer
                 }
                 else
                 {
-                    MessageBox.Show("File loaded successfully!");
+                    DrawDxfGraphics();
                 }
             }
             catch (Exception ex)
@@ -206,6 +204,7 @@ namespace PCBViewer
         private void DrawBasicShapes()
         {
             ClearDrawing();
+            currentContent = ContentType.BasicDraw;
 
             // Vẽ hình chữ nhật
             Rectangle rectangle = new Rectangle();
@@ -254,16 +253,11 @@ namespace PCBViewer
             //DrawingCanvas.Children.Add(path);
         }
 
-        private void DrawGraphics()
+        // Draw loaded dxf file
+        private void DrawDxfGraphics()
         {
-            foreach (var element in DrawingCanvas.Children)
-            {
-                if (element != pngImage)
-                {
-                    DrawingCanvas.Children.Remove(element as UIElement);
-                    break;
-                }
-            }
+            ClearDrawing();
+            currentContent = ContentType.DxfFile;
 
             if (dxfDocument == null) return;
 
@@ -280,8 +274,8 @@ namespace PCBViewer
                     StrokeThickness = 1,
                 };
 
-                //Canvas.SetLeft(uiLine, 0);
-                //Canvas.SetTop(uiLine, 0);
+                Canvas.SetLeft(uiLine, 0);
+                Canvas.SetTop(uiLine, 0);
                 DrawingCanvas.Children.Add(uiLine);
             }
 
@@ -328,9 +322,20 @@ namespace PCBViewer
 
             LimitOffsets();
 
-            UpdateImagePosition();
-
-            DrawGraphics(); // redraw with updated zoom
+            switch (currentContent)
+            {
+                case ContentType.PngImage:
+                    UpdateImagePosition();
+                    break;
+                case ContentType.DxfFile:
+                    DrawDxfGraphics();
+                    break;
+                case ContentType.BasicDraw:
+                    DrawBasicShapes();
+                    break;
+                case ContentType.None:
+                    break;
+            }
         }
 
         private void LimitOffsets()
@@ -422,7 +427,10 @@ namespace PCBViewer
                 LimitOffsets();
 
                 UpdateImagePosition();
-                DrawGraphics();
+                if (dxfDocument != null)
+                {
+                    DrawDxfGraphics();
+                }
 
                 lastMousePosition = currentPos;
             }
@@ -461,13 +469,15 @@ namespace PCBViewer
 
         private void ClearDrawing()
         {
-            // neu co anh da ve tren canvas
-            if (DrawingCanvas.Children.Count > 0)
-            {
-                DrawingCanvas.Children.Clear();
-            }
+            DrawingCanvas.Children.Clear();
+            dxfDocument = null;
+            pngImage = null;
+            writeableBitmap = null;
+            zoomLevel = 1;
+            offsetX = 0;
+            offsetY = 0;
         }
     }
 
-    
+
 }
