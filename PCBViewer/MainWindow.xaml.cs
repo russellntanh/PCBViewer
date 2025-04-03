@@ -1,6 +1,6 @@
-﻿using Microsoft.Win32;
-using netDxf;
-using netDxf.Header;
+﻿using ACadSharp;
+using ACadSharp.IO;
+using Microsoft.Win32;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
@@ -16,7 +16,7 @@ namespace PCBViewer
     /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
-        private DxfDocument dxfDocument;
+        private CadDocument cadDocument; // ACadSharp library
         private double zoomLevel = 1.0;
         private double offsetX;
         private double offsetY;
@@ -29,6 +29,8 @@ namespace PCBViewer
         private string _greyValue;
         private WriteableBitmap writeableBitmap;
 
+        #region Enum for each buttons
+        // enum corresponding to each button
         public enum ContentType
         {
             None,
@@ -36,16 +38,18 @@ namespace PCBViewer
             BasicDraw,
             DxfFile
         }
-
         private ContentType currentContent = ContentType.None;
+        #endregion
 
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        private void OnPropertyChanged(string propertyName)
+        public MainWindow()
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            InitializeComponent();
+            DataContext = this;
+            MousePosition = "(0, 0)";
+            GreyValue = "(0)";
         }
 
+        #region Property
         public string MousePosition
         {
             get => _mousePosition;
@@ -66,14 +70,15 @@ namespace PCBViewer
             }
         }
 
-        public MainWindow()
-        {
-            InitializeComponent();
-            DataContext = this;
-            MousePosition = "(0, 0)";
-            GreyValue = "(0)";
-        }
+        public event PropertyChangedEventHandler PropertyChanged;
 
+        private void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+        #endregion
+
+        #region Load Png Image
         private void ImageButton_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
@@ -152,9 +157,13 @@ namespace PCBViewer
                 pngImage.Height = newHeight;
             }
         }
+        #endregion
 
-
-
+        #region Draw basic shapes
+        private void BasicDrawButton_Click(object sender, RoutedEventArgs e)
+        {
+            DrawBasicShapes();
+        }
         private void DrawBasicShapes()
         {
             ClearDrawing();
@@ -206,45 +215,73 @@ namespace PCBViewer
             //path.Stroke = Brushes.Black;
             //DrawingCanvas.Children.Add(path);
         }
+        #endregion
+
+        #region Load DXF/DWG
+        private void DxfDwgButton_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Filter = "DXF files (*.dxf)|*.dxf|" +
+                         "All files (*.*)|*.*"
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                string filePath = openFileDialog.FileName;
+                if (pngImage != null)
+                    pngImage = null;
+                LoadDxfFile(filePath);
+            }
+        }
+
+        private void LoadDxfFile(string filePath)
+        {
+            try
+            {
+                //cadDocument = new CadDocument();
+
+                // check version before loading
+                using (DxfReader reader = new DxfReader(filePath))
+                {
+                    int i = 0;
+                    cadDocument = reader.Read();
+                    DrawDxfGraphics();
+                }
+
+
+                // load dxf file
+                ClearDrawing();
+                currentContent = ContentType.DxfFile;
+
+                if (cadDocument == null)
+                {
+                    MessageBox.Show("Document is null after Load!");
+                }
+                else
+                {
+                    DrawDxfGraphics();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading DXF: {ex.Message}.\nStack Trace: {ex.StackTrace}");
+            }
+        }
 
         // Draw loaded dxf file
         private void DrawDxfGraphics()
         {
             DrawingCanvas.Children.Clear();
             // draw line
-            foreach (netDxf.Entities.Line line in dxfDocument.Entities.Lines)
-            {
-                System.Windows.Shapes.Line uiLine = new System.Windows.Shapes.Line
-                {
-                    X1 = line.StartPoint.X * zoomLevel,
-                    Y1 = line.StartPoint.Y * zoomLevel,
-                    X2 = line.EndPoint.X * zoomLevel,
-                    Y2 = line.EndPoint.Y * zoomLevel,
-                    Stroke = Brushes.Blue,
-                    StrokeThickness = 1,
-                };
 
-                Canvas.SetLeft(uiLine, 0);
-                Canvas.SetTop(uiLine, 0);
-                DrawingCanvas.Children.Add(uiLine);
-            }
+            var allEntity = cadDocument.Entities;
 
-            // draw circle
-            foreach (netDxf.Entities.Circle circle in dxfDocument.Entities.Circles)
-            {
-                System.Windows.Shapes.Ellipse uiEllipse = new System.Windows.Shapes.Ellipse
-                {
-                    Width = circle.Radius * 2 * zoomLevel,
-                    Height = circle.Radius * 2 * zoomLevel,
-                    Stroke = Brushes.Orange,
-                    StrokeThickness = 1,
-                };
 
-                Canvas.SetLeft(uiEllipse, (circle.Center.X * zoomLevel) + offsetX - circle.Radius * zoomLevel);
-                Canvas.SetTop(uiEllipse, (circle.Center.Y * zoomLevel) + offsetY - circle.Radius * zoomLevel);
-                DrawingCanvas.Children.Add(uiEllipse);
-            }
         }
+        #endregion
+
+        #region Mouse interactions
 
         private void DrawingCanvas_MouseWheel(object sender, MouseWheelEventArgs e)
         {
@@ -377,7 +414,7 @@ namespace PCBViewer
                 LimitOffsets();
 
                 UpdateImagePosition();
-                if (dxfDocument != null)
+                if (cadDocument != null)
                 {
                     DrawDxfGraphics();
                 }
@@ -412,74 +449,20 @@ namespace PCBViewer
                 DrawingCanvas.ReleaseMouseCapture();
             }
         }
+        #endregion
 
-        private void BasicDrawButton_Click(object sender, RoutedEventArgs e)
-        {
-            DrawBasicShapes();
-        }
-
-        private void DxfDwgButton_Click(object sender, RoutedEventArgs e)
-        {
-            OpenFileDialog openFileDialog = new OpenFileDialog
-            {
-                Filter = "DXF files (*.dxf)|*.dxf|" +
-                         "All files (*.*)|*.*"
-            };
-
-            if (openFileDialog.ShowDialog() == true)
-            {
-                string filePath = openFileDialog.FileName;
-                if (pngImage != null)
-                    pngImage = null;
-                LoadDxfFile(filePath);
-            }
-        }
-
-        private void LoadDxfFile(string filePath)
-        {
-            try
-            {
-                dxfDocument = new DxfDocument();
-
-                // check version before loading
-                DxfVersion dxfVersion = DxfDocument.CheckDxfFileVersion(filePath);
-                if (dxfVersion < DxfVersion.AutoCad2000)
-                {
-                    MessageBox.Show("The selected file version: " + dxfVersion + " is not compatible with netDxf library which only from AutoCad13");
-                    return;
-                }
-
-                // load dxf file
-                ClearDrawing();
-                currentContent = ContentType.DxfFile;
-
-                dxfDocument = DxfDocument.Load(filePath);
-                if (dxfDocument == null)
-                {
-                    MessageBox.Show("dxfDocument is null after Load!");
-                }
-                else
-                {
-                    DrawDxfGraphics();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error loading DXF: {ex.Message}.\nStack Trace: {ex.StackTrace}");
-            }
-        }
-
+        #region Clear all stuff on canvas
         private void ClearDrawing()
         {
             DrawingCanvas.Children.Clear();
-            dxfDocument = null;
+            cadDocument = null;
             pngImage = null;
             writeableBitmap = null;
             zoomLevel = 1;
             offsetX = 0;
             offsetY = 0;
         }
+        #endregion
     }
-
 
 }
